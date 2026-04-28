@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>O365 E3 + 3rd-Party vs M365 E3 Bundle — Cost Simulator</title>
+<title>O365 E3 + 3rd-Party vs M365 E3 Bundle — Cost Simulator (Jul 2026 pricing)</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
   :root, [data-theme="dark"]{
@@ -67,7 +67,7 @@
 <header>
   <div class="head-text">
     <h1>Office 365 E3 + 3rd-Party Add-ons vs Microsoft 365 E3 Bundle</h1>
-    <div class="sub">Quantify the bundle savings from upgrading from Office 365 E3 to Microsoft 365 E3 instead of buying Office 365 E3 plus separate identity, device management, endpoint protection, information protection, and Windows products. <span class="pill">List prices, USD, monthly per user unless noted</span></div>
+    <div class="sub">Quantify the bundle savings from upgrading from Office 365 E3 to Microsoft 365 E3 instead of buying Office 365 E3 plus separate identity, device management, endpoint protection, information protection, and Windows products. <span class="pill">Reflects Microsoft pricing & packaging effective <strong>1 Jul 2026</strong></span> <span class="pill">List prices, USD, monthly per user</span></div>
   </div>
   <button id="themeBtn" class="theme-toggle" type="button" title="Toggle light/dark"><span id="themeIcon">🌙</span><span id="themeLabel">Dark</span></button>
 </header>
@@ -147,8 +147,11 @@
 
       <div id="tab-notes" class="hidden">
         <ul style="font-size:13px;line-height:1.7;color:var(--muted)">
-          <li><strong>What M365 E3 adds over O365 E3:</strong> Windows 11 Enterprise (per-user CAL), Enterprise Mobility + Security E3 (Entra ID P1, Microsoft Intune, Microsoft Defender for Endpoint Plan 1, Azure Information Protection P1, Microsoft Defender for Cloud Apps Discovery, Microsoft Advanced Threat Analytics).</li>
-          <li><strong>Microsoft list prices used:</strong> Office 365 E3 $23.00, Microsoft 365 E3 $36.00, Windows 11 Enterprise E3 $7.00, EMS E3 $10.60, Entra ID P1 $6.00, Intune Plan 1 $8.00, Defender for Endpoint P1 $3.00, AIP P1 $2.00.</li>
+          <li><strong>Microsoft pricing & packaging effective 1 July 2026</strong> (announced Dec 2025): Office 365 E3 $23→<strong>$26</strong> (+13%), Microsoft 365 E3 $36→<strong>$39</strong> (+8%), Microsoft 365 E5 $57→<strong>$60</strong> (+5%). Frontline (F1) up to +33%. Office 365 E1 unchanged. The $13 bundle delta between O365 E3 and M365 E3 is unchanged ($26 → $39).</li>
+          <li><strong>New capabilities now bundled in <em>both</em> O365 E3 and M365 E3</strong> (no extra charge from 1 Jul 2026): Defender for Office 365 Plan 1 (anti-phish, Safe Links, Safe Attachments — was a separate ~$2 add-on), and Microsoft 365 Copilot Chat with Agent Mode in Word/Excel/PowerPoint/Outlook/OneNote. These narrow the M365 E3 vs O365 E3 differentiation slightly, but the EMS E3 (identity/MDM/MDE-P1/AIP), Windows 11 Enterprise, Intune Remote Help and Advanced Analytics gap remains.</li>
+          <li><strong>What M365 E3 still adds over O365 E3</strong> from 1 Jul 2026: Windows 11 Enterprise per-user CAL, Enterprise Mobility + Security E3 (Entra ID P1, Microsoft Intune incl. Remote Help & Advanced Analytics, Microsoft Defender for Endpoint Plan 1, Azure Information Protection P1, Microsoft Defender for Cloud Apps Discovery).</li>
+          <li><strong>Effective price impact</strong> for many enterprises is higher than the headline 8–13%: Microsoft also removed large-volume Enterprise Agreement discounts (effective Nov 2025), so realised increases often land in the <strong>15–23%</strong> range. Use the Microsoft discount field to model your post-Nov-2025 EA rate.</li>
+          <li><strong>Microsoft list prices used (Jul 2026):</strong> Office 365 E3 $26.00, Microsoft 365 E3 $39.00, Windows 11 Enterprise E3 $7.00, EMS E3 $10.60, Entra ID P1 $6.00, Intune Plan 1 $8.00, Defender for Endpoint P1 $3.00, AIP P1 $2.00.</li>
           <li><strong>3rd-party vendors</strong> are sourced from the latest Gartner Magic Quadrants for each market: Access Management 2024, Unified Endpoint Management Tools 2024, Endpoint Protection Platforms 2025. Position labels in dropdowns: <strong>L</strong>=Leader, <strong>C</strong>=Challenger, <strong>V</strong>=Visionary, <strong>NP</strong>=Niche Player.</li>
           <li><strong>Windows 11 Enterprise</strong> is only sold by Microsoft. Customers on OEM Windows 11 Pro can technically skip it, but lose Enterprise-only features (Credential Guard, App Control for Business, Windows Autopatch, LTSC eligibility, etc.). Toggle off to model that scenario.</li>
           <li>Excludes one-time migration, integration, training, and ELA true-up costs — typically $15–$40 per user when introducing 2+ new vendors.</li>
@@ -162,8 +165,10 @@
 
 <script>
 // ---------- Data ----------
-const O365_E3 = {name:"Office 365 E3 (baseline)", price:23.00};
-const M365_E3 = {name:"Microsoft 365 E3 (bundle: O365 E3 + EMS E3 + Win 11 Ent)", price:36.00};
+// Pricing reflects Microsoft list effective 1 July 2026 (announced Dec 2025).
+// As of that date, Office 365 E3 also bundles Defender for O365 Plan 1 and Copilot Chat (with Agent Mode) at no extra charge.
+const O365_E3 = {name:"Office 365 E3 (baseline, Jul 2026 list — now incl. Defender for O365 P1, Copilot Chat w/ Agent Mode)", price:26.00};
+const M365_E3 = {name:"Microsoft 365 E3 (bundle, Jul 2026 list — O365 E3 + EMS E3 + Win 11 Ent + Intune Remote Help + Intune Advanced Analytics)", price:39.00};
 
 // Each gap = a capability M365 E3 adds over O365 E3.
 // Competitor list curated from latest Gartner Magic Quadrants.
@@ -245,8 +250,10 @@ const GAPS = [
 
 const CAPS = [
   ["Office desktop apps & Exchange/SharePoint/Teams","Yes (in O365 E3)","Yes (in O365 E3)","Identical baseline"],
+  ["Defender for Office 365 Plan 1 (anti-phish, ATP links, Safe Attachments)","Yes (now bundled in O365 E3 from Jul 2026)","Yes (also in M365 E3)","No longer a differentiator — was previously M365 E3 / E5 only"],
+  ["Microsoft 365 Copilot Chat with Agent Mode (Word/Excel/PPT/Outlook/OneNote)","Yes (free in O365 E3 from Jul 2026)","Yes (also in M365 E3)","Not full M365 Copilot — that remains a paid $30/user add-on"],
   ["SSO / MFA / Conditional Access","Yes (Okta/Ping/Duo)","Yes (Entra ID P1)","Equivalent functionality; native AAD integration is tighter"],
-  ["MDM / MAM for iOS/Android/Windows/macOS","Yes (VMware/Jamf/Ivanti)","Yes (Intune)","Best-of-breed often stronger for Apple (Jamf)"],
+  ["MDM / MAM for iOS/Android/Windows/macOS","Yes (VMware/Jamf/Ivanti)","Yes (Intune + Remote Help + Advanced Analytics now in E3)","Best-of-breed often stronger for Apple (Jamf)"],
   ["Endpoint protection / next-gen AV","Yes (CrowdStrike/SentinelOne/Sophos)","Yes (MDE P1)","3rd-party often beats MDE P1 detection rates; MDE P2 (E5) closes gap"],
   ["Information rights / encryption","Partial (Virtru/Seclore)","Yes (AIP P1 sensitivity labels)","AIP propagates labels into Office apps natively"],
   ["Shadow IT / SaaS discovery","Yes","Yes (MDA Discovery)","Comparable basic discovery"],
