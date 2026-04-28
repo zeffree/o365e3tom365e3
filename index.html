@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>O365 E3 + 3rd-Party vs M365 E3 Bundle — Cost Simulator</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root, [data-theme="dark"]{
+    --bg:#0b1020; --bg2:#080c1c; --panel:#121831; --panel2:#192043; --ink:#e8ecf7; --muted:#9aa3c7;
+    --accent:#5b8def; --good:#23c993; --warn:#ffb454; --bad:#ff6b6b; --line:#262d4d;
+    --header-bg:rgba(18,24,49,.7); --input-bg:#192043; --tick:#9aa3c7;
+  }
+  [data-theme="light"]{
+    --bg:#f5f7fb; --bg2:#eaeef7; --panel:#ffffff; --panel2:#f1f4fb; --ink:#13192e; --muted:#5b6485;
+    --accent:#2563eb; --good:#0e9f6e; --warn:#d97706; --bad:#dc2626; --line:#dde3f0;
+    --header-bg:rgba(255,255,255,.85); --input-bg:#ffffff; --tick:#5b6485;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;background:linear-gradient(180deg,var(--bg2),var(--bg));color:var(--ink);min-height:100vh;transition:background .25s,color .25s}
+  header{padding:28px 32px;border-bottom:1px solid var(--line);background:var(--header-bg);backdrop-filter:blur(8px);position:sticky;top:0;z-index:5;display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+  .head-text{flex:1}
+  h1{margin:0 0 6px;font-size:22px;letter-spacing:.2px}
+  .sub{color:var(--muted);font-size:13px}
+  .theme-toggle{background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:8px 14px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+  .theme-toggle:hover{border-color:var(--accent)}
+  main{max-width:1280px;margin:0 auto;padding:24px 32px 80px;display:grid;grid-template-columns:340px 1fr;gap:24px}
+  @media (max-width: 980px){ main{grid-template-columns:1fr} }
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .panel h2{margin:0 0 12px;font-size:14px;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted)}
+  label{display:block;font-size:13px;color:var(--muted);margin:10px 0 6px}
+  input[type=number],input[type=range],select{width:100%;background:var(--input-bg);border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 10px;font-size:14px}
+  .row{display:flex;gap:8px;align-items:center}
+  .row > *{flex:1}
+  .stack-toggle{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+  .opt{display:flex;justify-content:space-between;align-items:center;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:13px;cursor:pointer}
+  .opt input{accent-color:var(--accent)}
+  .opt small{color:var(--muted);display:block;margin-top:2px}
+  .opt select{background:var(--bg) !important;color:var(--ink) !important}
+  .summary{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .card h3{margin:0 0 4px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+  .price{font-size:28px;font-weight:600;letter-spacing:-.5px}
+  .price small{font-size:13px;color:var(--muted);font-weight:400;margin-left:4px}
+  .delta{margin-top:6px;font-size:13px;display:inline-block;padding:3px 8px;border-radius:999px}
+  .delta.good{background:rgba(35,201,147,.15);color:var(--good)}
+  .delta.bad{background:rgba(255,107,107,.15);color:var(--bad)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
+  th{font-weight:500;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.8px}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
+  .cap-yes{color:var(--good);font-weight:600}
+  .cap-partial{color:var(--warn);font-weight:600}
+  .cap-no{color:var(--bad);font-weight:600}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:780px){ .grid2{grid-template-columns:1fr} }
+  canvas{max-height:280px}
+  footer{color:var(--muted);font-size:12px;padding:0 32px 24px;max-width:1280px;margin:0 auto}
+  .tabbar{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+  .tab{padding:7px 12px;border-radius:8px;background:var(--panel2);border:1px solid var(--line);color:var(--muted);font-size:12px;cursor:pointer}
+  .tab.active{background:var(--accent);color:white;border-color:var(--accent)}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<header>
+  <div class="head-text">
+    <h1>Office 365 E3 + 3rd-Party Add-ons vs Microsoft 365 E3 Bundle</h1>
+    <div class="sub">Quantify the bundle savings from upgrading from Office 365 E3 to Microsoft 365 E3 instead of buying Office 365 E3 plus separate identity, device management, endpoint protection, information protection, and Windows products. <span class="pill">List prices, USD, monthly per user unless noted</span></div>
+  </div>
+  <button id="themeBtn" class="theme-toggle" type="button" title="Toggle light/dark"><span id="themeIcon">🌙</span><span id="themeLabel">Dark</span></button>
+</header>
+
+<main>
+  <aside class="panel">
+    <h2>Inputs</h2>
+    <label>Number of users</label>
+    <div class="row"><input id="users" type="number" min="1" value="1000" /><input id="usersRange" type="range" min="50" max="25000" value="1000" /></div>
+
+    <label>Contract term</label>
+    <select id="term">
+      <option value="1">1 year</option>
+      <option value="3" selected>3 years</option>
+      <option value="5">5 years</option>
+    </select>
+
+    <label>Enterprise discount on Microsoft list (%)</label>
+    <input id="msDisc" type="number" min="0" max="40" value="0" />
+
+    <label>Enterprise discount on 3rd-party list (%)</label>
+    <input id="cmpDisc" type="number" min="0" max="40" value="0" />
+
+    <h2 style="margin-top:18px">Option A — 3rd-Party Add-ons</h2>
+    <div class="sub" style="font-size:12px;margin-bottom:8px">These products fill the capabilities Microsoft 365 E3 adds on top of Office 365 E3 (identity premium, MDM, endpoint security, information protection, Windows Enterprise). Toggle and choose vendor.</div>
+    <div id="stack" class="stack-toggle"></div>
+  </aside>
+
+  <section>
+    <div class="summary">
+      <div class="card">
+        <h3>Option A — Office 365 E3 + 3rd-party stack (ala carte)</h3>
+        <div class="price" id="aMonthly">$0<small>/mo total</small></div>
+        <div class="sub" id="aPerUser">$0 per user / month</div>
+        <div class="sub" id="aTerm" style="margin-top:6px">$0 over term</div>
+      </div>
+      <div class="card">
+        <h3>Option B — Microsoft 365 E3 (bundle)</h3>
+        <div class="price" id="bMonthly">$0<small>/mo total</small></div>
+        <div class="sub" id="bPerUser">$0 per user / month</div>
+        <div class="sub" id="bTerm" style="margin-top:6px">$0 over term</div>
+        <div id="delta" class="delta good">—</div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-bottom:16px">
+      <div class="tabbar">
+        <div class="tab active" data-tab="break">Cost breakdown</div>
+        <div class="tab" data-tab="chart">Charts</div>
+        <div class="tab" data-tab="caps">Capability parity</div>
+        <div class="tab" data-tab="notes">Assumptions</div>
+      </div>
+
+      <div id="tab-break">
+        <div class="grid2">
+          <div>
+            <h2 style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:0 0 8px">Option A — O365 E3 + ala carte line items</h2>
+            <table id="aTable"><thead><tr><th>Component</th><th class="num">$/user/mo</th><th class="num">Monthly</th></tr></thead><tbody></tbody></table>
+          </div>
+          <div>
+            <h2 style="font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin:0 0 8px">Option B — M365 E3 bundle</h2>
+            <table id="bTable"><thead><tr><th>Component</th><th class="num">$/user/mo</th><th class="num">Monthly</th></tr></thead><tbody></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-chart" class="hidden">
+        <div class="grid2">
+          <div><canvas id="chartTotals"></canvas></div>
+          <div><canvas id="chartStack"></canvas></div>
+        </div>
+      </div>
+
+      <div id="tab-caps" class="hidden">
+        <table id="capTable"><thead><tr><th>Capability</th><th>O365 E3 + 3rd party</th><th>M365 E3 bundle</th><th>Notes</th></tr></thead><tbody></tbody></table>
+      </div>
+
+      <div id="tab-notes" class="hidden">
+        <ul style="font-size:13px;line-height:1.7;color:var(--muted)">
+          <li><strong>What M365 E3 adds over O365 E3:</strong> Windows 11 Enterprise (per-user CAL), Enterprise Mobility + Security E3 (Entra ID P1, Microsoft Intune, Microsoft Defender for Endpoint Plan 1, Azure Information Protection P1, Microsoft Defender for Cloud Apps Discovery, Microsoft Advanced Threat Analytics).</li>
+          <li><strong>Microsoft list prices used:</strong> Office 365 E3 $23.00, Microsoft 365 E3 $36.00, Windows 11 Enterprise E3 $7.00, EMS E3 $10.60, Entra ID P1 $6.00, Intune Plan 1 $8.00, Defender for Endpoint P1 $3.00, AIP P1 $2.00.</li>
+          <li><strong>3rd-party vendors</strong> are sourced from the latest Gartner Magic Quadrants for each market: Access Management 2024, Unified Endpoint Management Tools 2024, Endpoint Protection Platforms 2025. Position labels in dropdowns: <strong>L</strong>=Leader, <strong>C</strong>=Challenger, <strong>V</strong>=Visionary, <strong>NP</strong>=Niche Player.</li>
+          <li><strong>Windows 11 Enterprise</strong> is only sold by Microsoft. Customers on OEM Windows 11 Pro can technically skip it, but lose Enterprise-only features (Credential Guard, App Control for Business, Windows Autopatch, LTSC eligibility, etc.). Toggle off to model that scenario.</li>
+          <li>Excludes one-time migration, integration, training, and ELA true-up costs — typically $15–$40 per user when introducing 2+ new vendors.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>Built as a planning aid. Validate vendor pricing with current quotes before any decision. Last reference price refresh: 2026-Q2 public list.</footer>
+
+<script>
+// ---------- Data ----------
+const O365_E3 = {name:"Office 365 E3 (baseline)", price:23.00};
+const M365_E3 = {name:"Microsoft 365 E3 (bundle: O365 E3 + EMS E3 + Win 11 Ent)", price:36.00};
+
+// Each gap = a capability M365 E3 adds over O365 E3.
+// Competitor list curated from latest Gartner Magic Quadrants.
+const GAPS = [
+  { id:"identity", label:"Premium identity — SSO, MFA, Conditional Access (Entra ID P1)",
+    mq:"Access Management MQ (2024)",
+    msComponent:{name:"Entra ID P1 (in M365 E3 via EMS E3)", price:6.00},
+    competitors:[
+      {name:"Okta Workforce Identity SSO + Adaptive MFA (L)", price:11.00, default:true},
+      {name:"Ping Identity PingOne for Workforce (L)", price:6.00},
+      {name:"JumpCloud SSO + MFA tier (NP)", price:11.00},
+      {name:"OneLogin by One Identity Advanced (NP)", price:8.00},
+      {name:"Cisco Duo Premier (NP)", price:9.00},
+      {name:"IBM Security Verify SaaS (NP)", price:7.50},
+      {name:"CyberArk Identity Adaptive MFA + SSO (V)", price:8.00},
+    ]},
+  { id:"uem", label:"Unified Endpoint Management / MDM (Microsoft Intune)",
+    mq:"Unified Endpoint Management Tools MQ (2024)",
+    msComponent:{name:"Intune Plan 1 (in M365 E3 via EMS E3)", price:8.00},
+    competitors:[
+      {name:"VMware Workspace ONE UEM Advanced (L)", price:6.52, default:true},
+      {name:"VMware Workspace ONE UEM Enterprise (L)", price:10.04},
+      {name:"Ivanti Neurons for UEM (L)", price:5.00},
+      {name:"IBM MaaS360 Essentials (L)", price:4.00},
+      {name:"Jamf Pro (Apple-only) (L)", price:7.17},
+      {name:"ManageEngine Endpoint Central Enterprise (C)", price:2.00},
+      {name:"Citrix Endpoint Management Advanced (NP)", price:5.00},
+      {name:"BlackBerry UEM (NP)", price:6.00},
+      {name:"Kandji (Apple-only) (V)", price:7.00},
+    ]},
+  { id:"endpoint", label:"Endpoint protection / EDR (Defender for Endpoint P1)",
+    mq:"Endpoint Protection Platforms MQ (2025)",
+    msComponent:{name:"Defender for Endpoint P1 (in M365 E3)", price:3.00},
+    competitors:[
+      {name:"CrowdStrike Falcon Go (L)", price:4.99, default:true},
+      {name:"CrowdStrike Falcon Pro (L)", price:8.99},
+      {name:"SentinelOne Singularity Core (L)", price:6.00},
+      {name:"Sophos Intercept X Advanced (L)", price:4.00},
+      {name:"Trend Vision One Endpoint Standard (L)", price:5.00},
+      {name:"Bitdefender GravityZone Business (V)", price:3.00},
+      {name:"ESET PROTECT Entry (NP)", price:3.00},
+      {name:"Webroot Business Endpoint Protection (NP)", price:2.00},
+    ]},
+  { id:"info", label:"Information Protection / data classification (AIP P1)",
+    mq:"Data Security Platforms (DSPM/DLP)",
+    msComponent:{name:"Azure Information Protection P1 (in M365 E3)", price:2.00},
+    competitors:[
+      {name:"Virtru Email & File Encryption", price:5.00, default:true},
+      {name:"Seclore Enterprise Digital Rights Management", price:8.00},
+      {name:"NextLabs Data Centric Security", price:7.00},
+      {name:"Fortra Digital Guardian Endpoint DLP", price:6.00},
+      {name:"Vera by HelpSystems", price:7.50},
+    ]},
+  { id:"casb", label:"Shadow IT / SaaS discovery (Defender for Cloud Apps Discovery)",
+    mq:"SSE / CASB MQ (2024)",
+    msComponent:{name:"Defender for Cloud Apps Discovery (in M365 E3)", price:1.50},
+    competitors:[
+      {name:"Netskope SaaS Discovery (L)", price:4.00, default:true},
+      {name:"Zscaler SaaS Visibility (L)", price:4.50},
+      {name:"Palo Alto SaaS Inline (L)", price:5.00},
+      {name:"Cisco Cloudlock (C)", price:3.50},
+    ]},
+  { id:"windows", label:"Windows 11 Enterprise per-user upgrade",
+    mq:"Microsoft only (no third-party equivalent)",
+    msComponent:{name:"Windows 11 Enterprise E3 (in M365 E3)", price:7.00},
+    competitors:[
+      {name:"Windows 11 Enterprise E3 (Microsoft)", price:7.00, default:true},
+      {name:"Stay on OEM Windows 11 Pro (no extra cost; loses Credential Guard, App Control, Autopatch)", price:0.00},
+    ]},
+  { id:"ata", label:"Identity attack signal (Microsoft ATA / MDI Lite)",
+    mq:"ITDR",
+    msComponent:{name:"Microsoft ATA (legacy, in EMS E3)", price:1.50},
+    competitors:[
+      {name:"Quest Change Auditor for AD", price:4.00, default:false},
+      {name:"Semperis DSP", price:5.50},
+      {name:"Skip — accept residual risk", price:0.00, default:true},
+    ]},
+];
+
+const CAPS = [
+  ["Office desktop apps & Exchange/SharePoint/Teams","Yes (in O365 E3)","Yes (in O365 E3)","Identical baseline"],
+  ["SSO / MFA / Conditional Access","Yes (Okta/Ping/Duo)","Yes (Entra ID P1)","Equivalent functionality; native AAD integration is tighter"],
+  ["MDM / MAM for iOS/Android/Windows/macOS","Yes (VMware/Jamf/Ivanti)","Yes (Intune)","Best-of-breed often stronger for Apple (Jamf)"],
+  ["Endpoint protection / next-gen AV","Yes (CrowdStrike/SentinelOne/Sophos)","Yes (MDE P1)","3rd-party often beats MDE P1 detection rates; MDE P2 (E5) closes gap"],
+  ["Information rights / encryption","Partial (Virtru/Seclore)","Yes (AIP P1 sensitivity labels)","AIP propagates labels into Office apps natively"],
+  ["Shadow IT / SaaS discovery","Yes","Yes (MDA Discovery)","Comparable basic discovery"],
+  ["Windows 11 Enterprise feature set","No (unless kept on Win11 Pro)","Yes","Credential Guard, App Control, Autopatch, LTSC require Enterprise"],
+  ["Single bill / single vendor / single auth model","No","Yes","Bundle reduces procurement and integration overhead"],
+  ["Future upgrade path to E5 (security/compliance/voice)","Step-up via add-ons","Single SKU step-up","M365 E3 → E5 is one upgrade SKU"],
+];
+
+// ---------- Theme ----------
+const themeBtn = document.getElementById("themeBtn");
+const themeIcon = document.getElementById("themeIcon");
+const themeLabel = document.getElementById("themeLabel");
+function applyTheme(t){
+  document.documentElement.setAttribute("data-theme", t);
+  themeIcon.textContent = t==="dark" ? "🌙" : "☀️";
+  themeLabel.textContent = t==="dark" ? "Dark" : "Light";
+  try{ localStorage.setItem("o365sim-theme", t); }catch(e){}
+  if(!document.getElementById("tab-chart").classList.contains("hidden")) drawCharts();
+}
+const savedTheme = (()=>{ try{return localStorage.getItem("o365sim-theme")}catch(e){return null} })()
+  || (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+applyTheme(savedTheme);
+themeBtn.addEventListener("click", ()=>{
+  const cur = document.documentElement.getAttribute("data-theme");
+  applyTheme(cur==="dark" ? "light" : "dark");
+});
+function cssVar(n){ return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+
+// ---------- Stack UI ----------
+const stackEl = document.getElementById("stack");
+const state = {};
+GAPS.forEach(g => {
+  const def = g.competitors.find(c=>c.default) || g.competitors[0];
+  state[g.id] = { enabled:true, choice: def.name };
+  const wrap = document.createElement("div");
+  wrap.className = "opt";
+  wrap.innerHTML = `
+    <div style="flex:1">
+      <div><strong>${g.label}</strong></div>
+      <small>MQ source: ${g.mq} · Replaces: ${g.msComponent.name.replace(' (in M365 E3 via EMS E3)','').replace(' (in M365 E3)','')}</small>
+      <div style="margin-top:6px">
+        <select data-gap="${g.id}" style="font-size:12px">
+          ${g.competitors.map(c=>`<option value="${c.name}" ${c.name===def.name?'selected':''}>${c.name} — $${c.price.toFixed(2)}</option>`).join("")}
+        </select>
+      </div>
+    </div>
+    <input type="checkbox" data-toggle="${g.id}" checked style="margin-left:10px;transform:scale(1.2)" />
+  `;
+  stackEl.appendChild(wrap);
+});
+
+stackEl.addEventListener("change", e=>{
+  const t = e.target;
+  if(t.dataset.toggle){ state[t.dataset.toggle].enabled = t.checked; render(); }
+  if(t.dataset.gap){ state[t.dataset.gap].choice = t.value; render(); }
+});
+
+["users","term","msDisc","cmpDisc","usersRange"].forEach(id=>{
+  document.getElementById(id).addEventListener("input", e=>{
+    if(id==="users") document.getElementById("usersRange").value = Math.min(25000, +e.target.value||0);
+    if(id==="usersRange") document.getElementById("users").value = +e.target.value;
+    render();
+  });
+});
+
+document.querySelectorAll(".tab").forEach(t=>{
+  t.addEventListener("click", ()=>{
+    document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));
+    t.classList.add("active");
+    ["break","chart","caps","notes"].forEach(n=>document.getElementById("tab-"+n).classList.add("hidden"));
+    document.getElementById("tab-"+t.dataset.tab).classList.remove("hidden");
+    if(t.dataset.tab==="chart") drawCharts();
+  });
+});
+
+// ---------- Compute ----------
+let chartA, chartB;
+function fmt(n){ return "$"+n.toLocaleString(undefined,{maximumFractionDigits:0}); }
+
+function compute(){
+  const users = +document.getElementById("users").value || 0;
+  const term = +document.getElementById("term").value;
+  const msDisc = (+document.getElementById("msDisc").value||0)/100;
+  const cmpDisc = (+document.getElementById("cmpDisc").value||0)/100;
+
+  // Option A: O365 E3 + selected ala carte items
+  const aLines = [{...O365_E3, price:O365_E3.price*(1-msDisc)}];
+  GAPS.forEach(g=>{
+    const s = state[g.id];
+    if(!s.enabled) return;
+    const c = g.competitors.find(x=>x.name===s.choice);
+    if(c.price === 0) return; // skip zero-cost (e.g., "Skip" or OEM Win Pro)
+    const isMs = /Windows 11 Enterprise E3 \(Microsoft\)/.test(c.name);
+    const disc = isMs ? msDisc : cmpDisc;
+    aLines.push({name:c.name, price:c.price*(1-disc), gap:g.label});
+  });
+  const aPerUser = aLines.reduce((s,l)=>s+l.price,0);
+
+  // Option B: M365 E3 bundle
+  const bLines = [{...M365_E3, price:M365_E3.price*(1-msDisc)}];
+  const bPerUser = bLines.reduce((s,l)=>s+l.price,0);
+
+  return {users,term,aLines,bLines,aPerUser,bPerUser};
+}
+
+function render(){
+  const {users,term,aLines,bLines,aPerUser,bPerUser} = compute();
+  const aMonthly = aPerUser*users, bMonthly = bPerUser*users;
+  const aTerm = aMonthly*12*term, bTerm = bMonthly*12*term;
+
+  document.getElementById("aMonthly").innerHTML = fmt(aMonthly)+'<small>/mo total</small>';
+  document.getElementById("bMonthly").innerHTML = fmt(bMonthly)+'<small>/mo total</small>';
+  document.getElementById("aPerUser").textContent = `$${aPerUser.toFixed(2)} per user / month · ${users.toLocaleString()} users`;
+  document.getElementById("bPerUser").textContent = `$${bPerUser.toFixed(2)} per user / month · ${users.toLocaleString()} users`;
+  document.getElementById("aTerm").textContent = `${fmt(aTerm)} over ${term} year${term>1?'s':''}`;
+  document.getElementById("bTerm").textContent = `${fmt(bTerm)} over ${term} year${term>1?'s':''}`;
+
+  const diff = bMonthly - aMonthly; // negative means bundle is cheaper (good)
+  const dEl = document.getElementById("delta");
+  if(diff < 0){ dEl.className="delta good"; dEl.textContent = `Bundle saves ${fmt(-diff)}/mo (${fmt(-diff*12*term)} over term)`; }
+  else if(diff > 0){ dEl.className="delta bad"; dEl.textContent = `Bundle costs ${fmt(diff)}/mo more (${fmt(diff*12*term)} over term)`; }
+  else{ dEl.className="delta"; dEl.textContent = "Same monthly cost"; }
+
+  fillTable("aTable", aLines, users);
+  fillTable("bTable", bLines, users);
+  fillCaps();
+  if(!document.getElementById("tab-chart").classList.contains("hidden")) drawCharts();
+}
+
+function fillTable(id,lines,users){
+  const tb = document.querySelector("#"+id+" tbody");
+  tb.innerHTML = lines.map(l=>`<tr><td>${l.name}</td><td class="num">$${l.price.toFixed(2)}</td><td class="num">${fmt(l.price*users)}</td></tr>`).join("")
+    + `<tr><td><strong>Total</strong></td><td class="num"><strong>$${lines.reduce((s,l)=>s+l.price,0).toFixed(2)}</strong></td><td class="num"><strong>${fmt(lines.reduce((s,l)=>s+l.price,0)*users)}</strong></td></tr>`;
+}
+
+function fillCaps(){
+  const tb = document.querySelector("#capTable tbody");
+  const cls = v => /^Yes/.test(v)?'cap-yes':(/^Partial/.test(v)?'cap-partial':(/^No/.test(v)?'cap-no':''));
+  tb.innerHTML = CAPS.map(c=>`<tr><td>${c[0]}</td><td class="${cls(c[1])}">${c[1]}</td><td class="${cls(c[2])}">${c[2]}</td><td style="color:var(--muted)">${c[3]}</td></tr>`).join("");
+}
+
+function drawCharts(){
+  const {users,term,aLines,bLines,aPerUser,bPerUser} = compute();
+  const ctx1 = document.getElementById("chartTotals");
+  const ctx2 = document.getElementById("chartStack");
+  if(chartA) chartA.destroy(); if(chartB) chartB.destroy();
+  const ink = cssVar("--ink"), tick = cssVar("--tick"), line = cssVar("--line");
+
+  const years = Array.from({length:term},(_,i)=>"Year "+(i+1));
+  chartA = new Chart(ctx1, {
+    type:'bar',
+    data:{ labels:years, datasets:[
+      {label:'O365 E3 + 3rd-party', data: years.map(()=>aPerUser*users*12), backgroundColor:'#ff6b6b'},
+      {label:'M365 E3 bundle', data: years.map(()=>bPerUser*users*12), backgroundColor:'#23c993'}
+    ]},
+    options:{ responsive:true, plugins:{legend:{labels:{color:ink}}, title:{display:true,text:'Annual cost by option', color:ink}}, scales:{x:{ticks:{color:tick},grid:{color:line}},y:{ticks:{color:tick,callback:v=>'$'+(v/1e6).toFixed(2)+'M'},grid:{color:line}}}}
+  });
+
+  chartB = new Chart(ctx2, {
+    type:'doughnut',
+    data:{
+      labels: aLines.map(l=>l.name),
+      datasets:[{ data: aLines.map(l=>l.price*users), backgroundColor:['#5b8def','#ff6b6b','#ffb454','#a78bfa','#22d3ee','#f472b6','#facc15','#34d399','#fb923c','#60a5fa']}]
+    },
+    options:{ responsive:true, plugins:{legend:{position:'right',labels:{color:ink,font:{size:11}}}, title:{display:true,text:'Option A monthly spend mix', color:ink}}}
+  });
+}
+
+render();
+</script>
+</body>
+</html>
